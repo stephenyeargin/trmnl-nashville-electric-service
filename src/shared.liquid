@@ -1,4 +1,4 @@
-{% assign formatted_update_time = UpdateDateTimeFormatted | date: '%-m/%-d/%Y %I:%M %p' %}
+{% assign formatted_update_time = UpdateDateTimeFormatted | date: '%-m/%-d/%Y %-I:%M %p' %}
 {% assign customer_count = MapList | map: 'CustAffected' | sum %}
 
 <link
