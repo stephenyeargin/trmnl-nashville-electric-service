@@ -1,19 +1,36 @@
 <div class="view">
-  <div class="layout layout--row layout--top">
-    <div class="grid grid--cols-1 gap--medium">
-      <div class="item">
-        <div class="meta"></div>
-        <div class="content">
-          <div class="label label--medium">Half Vertical</div>
-          <div class="description">Replace me with your content!</div>
+  <div class="layout layout--column layout--top">
+    <div class="grid grid--cols-1 gap--large">
+      <div>
+        <div class="grid grid--cols-1 gap--large">
+          <div class="item">
+            <div class="meta"></div>
+            <div class="content">
+              <div>{{ svg_outage_marker }} <span class="value value--medium value--tnums" data-value-format="true">{{ customer_count | number_with_delimiter | default: 0 }}</span></div>
+              <div><span class="label label--small">Customers Without Power</span></div>
+            </div>
+          </div>
+          <div class="item">
+            <div class="meta"></div>
+            <div class="content">
+              <div class="value value--small">{{ formatted_update_time }}</div>
+              <div><span class="label label--small">Last Updated</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col col--span-1">
+        <div
+          id="wego-map"
+          class="wego-map"
+          style="overflow: hidden;">
+          <div id="nes-map-canvas" style="width:100%; height:250px;">Loading ...</div>
         </div>
       </div>
     </div>
   </div>
-
   <div class="title_bar">
-    <img class="image" src="https://usetrmnl.com/images/brand/glyphs/glyph--black.svg" />
-    <span class="title">Plugin Template</span>
-    <span class="instance">{{ trmnl.plugin_settings.instance_name }}</span>
+    <img class="image" src="https://raw.githubusercontent.com/stephenyeargin/trmnl-nashville-electric-service/refs/heads/main/assets/nes.svg" />
+    <span class="title">NES Service Outages</span>
   </div>
 </div>

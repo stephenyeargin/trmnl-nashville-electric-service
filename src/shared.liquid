@@ -1,1 +1,109 @@
+{% assign formatted_update_time = UpdateDateTimeFormatted | date: '%-m/%-d/%Y %I:%M %p' %}
+{% assign customer_count = MapList | map: 'CustAffected' | sum %}
 
+{% capture svg_outage_marker %}
+<svg width="24" height="24" viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;">
+  <g transform="matrix(0.488281,0,0,0.651042,0,0)">
+    <rect x="0" y="0" width="2048" height="1536" style="fill:none;"/>
+    <g transform="matrix(2.04309,0,0,1.53232,-77.8345,-26.168)">
+      <circle cx="539.299" cy="518.28" r="481.72" style="stroke:white;stroke-width:26.06px;"/>
+    </g>
+    <g transform="matrix(8.04095,0,0,6.03071,-2607.85,-2053.5)">
+      <path d="M453.07,378.463L500,378.463L456.002,450.716L494.047,450.716L403.34,557.248L444.865,472.74L407.224,472.74L453.07,378.463Z" style="fill:rgb(235,235,235);"/>
+    </g>
+  </g>
+</svg>
+{% endcapture %}
+
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+  crossorigin="" />
+<script
+  src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+  crossorigin=""></script>
+
+<style>
+  #nes-map-canvas {
+    border-radius: 10px;
+  }
+  .leaflet-tile-loaded {
+    opacity: 0.1;
+    filter: grayscale(1.0);
+  }
+</style>
+
+<script>
+  const MAP_LIST = {{ MapList | json }};
+  const SVG_OUTAGE_MARKER = `{{ svg_outage_marker }}`
+</script>
+
+<script>
+  /**
+   * Main Loop
+   */
+  document.addEventListener('DOMContentLoaded', async function () {
+    const mapContainer = document.getElementById('nes-map-canvas');
+    if (mapContainer) {
+      // Remove any previous map instance
+      if (window.nesMap && window.nesMap.remove) {
+        window.nesMap.remove();
+      }
+      window.nesMap = L.map('nes-map-canvas', {
+        center: [36.1627, -86.7816], // Nashville
+        zoom: 1,
+        zoomControl: false,
+        attributionControl: false
+      });
+      L.tileLayer('https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png', {
+          attribution: '<a href="https://github.com/cyclosm/cyclosm-cartocss-style/releases" title="CyclOSM - Open Bicycle render">CyclOSM</a> | Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+          ext: 'png',
+        }).addTo(window.nesMap);
+
+      // Create a layer group for markers
+      const markerLayer = L.layerGroup();
+      const bounds = [];
+
+      MAP_LIST.map((item, index) => {
+        // X1 is longitude, Y1 is latitude in geographic data
+        let latitude = parseFloat(item.Y1);
+        let longitude = parseFloat(item.X1);
+        let affected = parseInt(item.CustEffected, 10);
+
+        // Validate and process latitude/longitude before using
+        if (!isNaN(latitude) && !isNaN(longitude)) {
+          if (latitude >= -90 && latitude <= 90 && longitude >= -180 && longitude <= 180) {
+            bounds.push([latitude, longitude]);
+
+            // Define severity levels based on the number of customers affected
+            const severity = affected > 500 ? 'critical' : affected > 100 ? 'high' : affected > 50 ? 'medium' : 'low';
+
+            // Scale marker size based on severity
+            const radius = severity === 'critical' ? 40 : severity === 'high' ? 30 : severity === 'medium' ? 25 : 20;
+
+            // Inline SVG for marker
+            const svgIcon = L.divIcon({
+              html: SVG_OUTAGE_MARKER,
+              className: '',
+              iconSize: [radius * 2, radius * 2],
+              iconAnchor: [radius, radius],
+            });
+
+            L.marker([latitude, longitude], { icon: svgIcon }).addTo(window.nesMap);
+          } else {
+            console.warn(`Marker ${index} has out-of-range coordinates:`, latitude, longitude);
+          }
+        } else {
+          console.warn(`Marker ${index} has invalid coordinates:`, item.Y1, item.X1);
+        }
+      });
+
+      // Set map bounds to include all markers
+      if (bounds.length > 0) {
+        window.nesMap.fitBounds(bounds);
+      }
+    }
+  });
+</script>

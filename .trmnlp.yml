@@ -13,6 +13,6 @@ custom_fields: {}
 variables:
   trmnl: {
     plugin_settings: {
-      instance_name: 'My Instance'
+      instance_name: 'Nashville Electric Service (NES)'
     }
   }
