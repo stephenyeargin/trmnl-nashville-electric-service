@@ -4,7 +4,7 @@
       <div class="item">
         <div class="meta"></div>
         <div class="content">
-          <div>{{ svg_outage_marker }} <span class="value value--medium value--tnums" data-value-format="true">{{ customer_count | number_with_delimiter | default: 0 }}</span></div>
+          <div class="flex gap--small flex--center-y"><img class="image" src="https://raw.githubusercontent.com/stephenyeargin/trmnl-nashville-electric-service/refs/heads/main/assets/outage.svg" height="32" /> <span class="value value--medium value--tnums" data-value-format="true">{{ customer_count | number_with_delimiter | default: 0 }}</span></div>
           <div><span class="label label--small">Customers Without Power</span></div>
         </div>
       </div>
@@ -26,7 +26,7 @@
     </div>
   </div>
   <div class="title_bar">
-    <img class="image" src="https://raw.githubusercontent.com/stephenyeargin/trmnl-nashville-electric-service/refs/heads/main/assets/nes.svg" />
+    <img class="image image-stroke image-stroke--medium" src="https://raw.githubusercontent.com/stephenyeargin/trmnl-nashville-electric-service/refs/heads/main/assets/nes.svg" />
     <span class="title">Service Outages</span>
     <span class="instance">{{ trmnl.plugin_settings.instance_name }}</span>
   </div>

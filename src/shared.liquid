@@ -1,20 +1,6 @@
 {% assign formatted_update_time = UpdateDateTimeFormatted | date: '%-m/%-d/%Y %I:%M %p' %}
 {% assign customer_count = MapList | map: 'CustAffected' | sum %}
 
-{% capture svg_outage_marker %}
-<svg width="24" height="24" viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;">
-  <g transform="matrix(0.488281,0,0,0.651042,0,0)">
-    <rect x="0" y="0" width="2048" height="1536" style="fill:none;"/>
-    <g transform="matrix(2.04309,0,0,1.53232,-77.8345,-26.168)">
-      <circle cx="539.299" cy="518.28" r="481.72" style="stroke:white;stroke-width:26.06px;"/>
-    </g>
-    <g transform="matrix(8.04095,0,0,6.03071,-2607.85,-2053.5)">
-      <path d="M453.07,378.463L500,378.463L456.002,450.716L494.047,450.716L403.34,557.248L444.865,472.74L407.224,472.74L453.07,378.463Z" style="fill:rgb(235,235,235);"/>
-    </g>
-  </g>
-</svg>
-{% endcapture %}
-
 <link
   rel="stylesheet"
   href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -37,7 +23,6 @@
 
 <script>
   const MAP_LIST = {{ MapList | json }};
-  const SVG_OUTAGE_MARKER = `{{ svg_outage_marker }}`
 </script>
 
 <script>
@@ -81,11 +66,21 @@
             const severity = affected > 500 ? 'critical' : affected > 100 ? 'high' : affected > 50 ? 'medium' : 'low';
 
             // Scale marker size based on severity
-            const radius = severity === 'critical' ? 40 : severity === 'high' ? 30 : severity === 'medium' ? 25 : 20;
+            const radius = severity === 'critical' ? 16 : severity === 'high' ? 13 : severity === 'medium' ? 10 : 8;
 
-            // Inline SVG for marker
+            // Inline SVG for marker with dynamic sizing
             const svgIcon = L.divIcon({
-              html: SVG_OUTAGE_MARKER,
+              html: `<svg width="${radius * 2}" height="${radius * 2}" viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;">
+                <g transform="matrix(0.488281,0,0,0.651042,0,0)">
+                  <rect x="0" y="0" width="2048" height="1536" style="fill:none;"/>
+                  <g transform="matrix(2.04309,0,0,1.53232,-77.8345,-26.168)">
+                    <circle cx="539.299" cy="518.28" r="481.72" style="stroke:white;stroke-width:26.06px;"/>
+                  </g>
+                  <g transform="matrix(8.04095,0,0,6.03071,-2607.85,-2053.5)">
+                    <path d="M453.07,378.463L500,378.463L456.002,450.716L494.047,450.716L403.34,557.248L444.865,472.74L407.224,472.74L453.07,378.463Z" style="fill:rgb(235,235,235);"/>
+                  </g>
+                </g>
+              </svg>`,
               className: '',
               iconSize: [radius * 2, radius * 2],
               iconAnchor: [radius, radius],
