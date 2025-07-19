@@ -80,7 +80,7 @@
         // X1 is longitude, Y1 is latitude in geographic data
         let latitude = parseFloat(item.Y1);
         let longitude = parseFloat(item.X1);
-        let affected = parseInt(item.CustEffected, 10);
+        let affected = parseInt(item.CustAffected, 10);
 
         // Validate and process latitude/longitude before using
         if (!isNaN(latitude) && !isNaN(longitude)) {
@@ -111,7 +111,17 @@
               iconAnchor: [radius, radius],
             });
 
-            L.marker([latitude, longitude], { icon: svgIcon }).addTo(window.nesMap);
+            // Create marker with tooltip
+            const marker = L.marker([latitude, longitude], { icon: svgIcon });
+
+            // Add tooltip showing number of customers affected
+            marker.bindTooltip(`${affected.toLocaleString()} customer${affected === 1 ? '' : 's'} affected`, {
+              permanent: false,
+              direction: 'top',
+              offset: [0, -10]
+            });
+
+            marker.addTo(window.nesMap);
           } else {
             console.warn(`Marker ${index} has out-of-range coordinates:`, latitude, longitude);
           }
