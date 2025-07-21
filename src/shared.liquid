@@ -39,14 +39,11 @@
   #{{ mapCanvasId }} {
     border-radius: 10px;
   }
-  .leaflet-tile-loaded {
-    opacity: 0.1;
-    filter: grayscale(1.0);
-  }
 </style>
 
 <script>
   const MAP_LIST = {{ MapList | json }};
+  const THUNDERFOREST_API_KEY = {{ trmnl.plugin_settings.custom_fields_values.thunderforest_api_key | json }};
 </script>
 
 <script>
@@ -67,10 +64,18 @@
         zoomControl: false,
         attributionControl: false
       });
-      L.tileLayer('https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png', {
-          attribution: '<a href="https://github.com/cyclosm/cyclosm-cartocss-style/releases" title="CyclOSM - Open Bicycle render">CyclOSM</a> | Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-          ext: 'png',
-        }).addTo(window.nesMap);
+      // Nicer map if API key provided
+      if (THUNDERFOREST_API_KEY && !THUNDERFOREST_API_KEY?.includes('THUNDERFOREST_API_KEY')) {
+        L.tileLayer('https://{s}.tile.thunderforest.com/mobile-atlas/{z}/{x}/{y}{r}.png?apikey={apikey}', {
+            attribution: '&copy; <a href="http://www.thunderforest.com/">Thunderforest</a>, &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            apikey: THUNDERFOREST_API_KEY,
+          }).addTo(window.nesMap);
+      } else {
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+	          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            ext: 'png',
+          }).addTo(window.nesMap);
+      }
 
       // Create a layer group for markers
       const markerLayer = L.layerGroup();
