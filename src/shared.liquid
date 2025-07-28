@@ -135,9 +135,18 @@
         }
       });
 
-      // Set map bounds to include all markers
+      // Set map bounds to include all markers or center on Nashville if no outages
       if (bounds.length > 0) {
         window.nesMap.fitBounds(bounds);
+      } else {
+        // Center on Nashville with city-level zoom when no outages
+        window.nesMap.setView([36.1627, -86.7816], 10);
+
+        // Add "No outages reported" overlay
+        const overlayDiv = document.createElement('div');
+        overlayDiv.innerHTML = '<div class="bg--white title title--small p--5 clamp--none text--center" style="border-radius: 10px; border: solid 1px #000">No outages reported</div>';
+        overlayDiv.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000; pointer-events: none;';
+        mapContainer.appendChild(overlayDiv);
       }
     }
   });
