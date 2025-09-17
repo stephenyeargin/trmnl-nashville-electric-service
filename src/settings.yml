@@ -6,7 +6,7 @@ static_data: ''
 polling_verb: get
 polling_url: https://www.nespower.com/outagemap/getall
 polling_headers: accept=application/json
-polling_body: 
+polling_body: ''
 id: 112378
 custom_fields:
 - keyname: author_bio
@@ -19,8 +19,8 @@ custom_fields:
 - keyname: thunderforest_api_key
   field_type: password
   name: Thunderforest API Key
-  description: Use for <a href="https://www.thunderforest.com/maps/mobile-atlas/" class="underline">nicer looking maps</a>
+  description: (optional, recommended) Use for <a href="https://www.thunderforest.com/maps/mobile-atlas/" class="underline">nicer looking maps</a>
   placeholder: ABCDefg1234
-  required: false
+  optional: true
 name: Nashville Electric Service (NES)
 refresh_interval: 15
