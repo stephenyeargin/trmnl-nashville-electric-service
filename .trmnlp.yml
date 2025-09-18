@@ -7,12 +7,20 @@ watch:
   - src
 
 # values of custom fields (defined in src/settings.yml)
-custom_fields: {}
+custom_fields: {
+  # thunderforest_api_key: '{{ env.THUNDERFOREST_API_KEY }}', # Doesn't work as of 7/21/25
+  thunderforest_api_key: 'e43d4ad3df1846b58584aa02c7330c6b'
+}
 
 # override variables
 variables:
   trmnl: {
     plugin_settings: {
       instance_name: 'Nashville Electric Service (NES)'
+    },
+    user: {
+      time_zone: Central Time (US & Canada),
+      time_zone_iana: America/Chicago,
+      utc_offset: -18000
     }
   }
