@@ -58,7 +58,7 @@ function transform(input) {
   var totalIncidents = minimalList.length;
 
   // Collapse when too many points to plot
-  var COLLAPSE_THRESHOLD = 10000;
+  var COLLAPSE_THRESHOLD = 1000;
   var collapsed = totalIncidents > COLLAPSE_THRESHOLD;
 
   // Return collapsed structure (no markers) when threshold exceeded
