@@ -6,7 +6,10 @@
 {% else %}
   {% assign formatted_update_time = UpdateDateTimeFormatted %}
 {% endif %}
-{% assign customer_count = MapList | map: 'CustAffected' | sum %}
+{% assign customer_count = TotalAffected %}
+{% if customer_count == nil or customer_count == '' %}
+  {% assign customer_count = MapList | map: 'CustAffected' | sum %}
+{% endif %}
 
 {%- capture nes_logo %}
 <svg width="100%" height="100%" viewBox="0 0 152 152" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
@@ -63,6 +66,9 @@
 
 <script>
   const MAP_LIST = {{ MapList | json }};
+  const COLLAPSED = {{ Collapsed | json }};
+  const TOTAL_INCIDENTS = {{ TotalIncidents | json }};
+  const TOTAL_AFFECTED = {{ TotalAffected | json }};
   const THUNDERFOREST_API_KEY = {{ trmnl.plugin_settings.custom_fields_values.thunderforest_api_key | json }};
 </script>
 
@@ -101,59 +107,64 @@
       const markerLayer = L.layerGroup();
       const bounds = [];
 
-      MAP_LIST.map((item, index) => {
-        // X1 is longitude, Y1 is latitude in geographic data
-        let latitude = parseFloat(item.Y1);
-        let longitude = parseFloat(item.X1);
-        let affected = parseInt(item.CustAffected, 10);
+      if (!COLLAPSED) {
+        MAP_LIST.map((item, index) => {
+          // X1 is longitude, Y1 is latitude in geographic data
+          let latitude = parseFloat(item.Y1);
+          let longitude = parseFloat(item.X1);
+          let affected = parseInt(item.CustAffected, 10);
 
-        // Validate and process latitude/longitude before using
-        if (!isNaN(latitude) && !isNaN(longitude)) {
-          if (latitude >= -90 && latitude <= 90 && longitude >= -180 && longitude <= 180) {
-            bounds.push([latitude, longitude]);
+          // Validate and process latitude/longitude before using
+          if (!isNaN(latitude) && !isNaN(longitude)) {
+            if (latitude >= -90 && latitude <= 90 && longitude >= -180 && longitude <= 180) {
+              bounds.push([latitude, longitude]);
 
-            // Define severity levels based on the number of customers affected
-            const severity = affected > 500 ? 'critical' : affected > 100 ? 'high' : affected > 50 ? 'medium' : 'low';
+              // Define severity levels based on the number of customers affected
+              const severity = affected > 500 ? 'critical' : affected > 100 ? 'high' : affected > 50 ? 'medium' : 'low';
 
-            // Scale marker size based on severity
-            const radius = severity === 'critical' ? 16 : severity === 'high' ? 13 : severity === 'medium' ? 10 : 8;
+              // Scale marker size based on severity
+              const radius = severity === 'critical' ? 16 : severity === 'high' ? 13 : severity === 'medium' ? 10 : 8;
 
-            // Use data URL with base64-encoded SVG
-            const svgIcon = L.icon({
-              iconUrl: `data:image/svg+xml;base64,{{ outage_svg | base64_encode }}`,
-              iconSize: [radius * 2, radius * 2],
-              iconAnchor: [radius, radius],
-            });
+              // Use data URL with base64-encoded SVG
+              const svgIcon = L.icon({
+                iconUrl: `data:image/svg+xml;base64,{{ outage_svg | base64_encode }}`,
+                iconSize: [radius * 2, radius * 2],
+                iconAnchor: [radius, radius],
+              });
 
-            // Create marker with tooltip
-            const marker = L.marker([latitude, longitude], { icon: svgIcon });
+              // Create marker with tooltip
+              const marker = L.marker([latitude, longitude], { icon: svgIcon });
 
-            // Add tooltip showing number of customers affected
-            marker.bindTooltip(`${affected.toLocaleString()} customer${affected === 1 ? '' : 's'} affected`, {
-              permanent: false,
-              direction: 'top',
-              offset: [0, -10]
-            });
+              // Add tooltip showing number of customers affected
+              marker.bindTooltip(`${affected.toLocaleString()} customer${affected === 1 ? '' : 's'} affected`, {
+                permanent: false,
+                direction: 'top',
+                offset: [0, -10]
+              });
 
-            marker.addTo(window.nesMap);
+              marker.addTo(window.nesMap);
+            } else {
+              console.warn(`Marker ${index} has out-of-range coordinates:`, latitude, longitude);
+            }
           } else {
-            console.warn(`Marker ${index} has out-of-range coordinates:`, latitude, longitude);
+            console.warn(`Marker ${index} has invalid coordinates:`, item.Y1, item.X1);
           }
-        } else {
-          console.warn(`Marker ${index} has invalid coordinates:`, item.Y1, item.X1);
-        }
-      });
+        });
+      }
 
-      // Set map bounds to include all markers or center on Nashville if no outages
+      // Set map bounds to include all markers or center on Nashville if collapsed/no outages
       if (bounds.length > 0) {
         window.nesMap.fitBounds(bounds);
       } else {
-        // Center on Nashville with city-level zoom when no outages
+        // Center on Nashville with city-level zoom
         window.nesMap.setView([36.1627, -86.7816], 10);
 
-        // Add "No outages reported" overlay
+        // Add overlay message
         const overlayDiv = document.createElement('div');
-        overlayDiv.innerHTML = '<div class="bg--white title title--small p--5 clamp--none text--center" style="border-radius: 10px; border: solid 1px #000">No outages reported</div>';
+        const message = COLLAPSED
+          ? `${TOTAL_INCIDENTS.toLocaleString()} outages affecting ${TOTAL_AFFECTED.toLocaleString()} customers`
+          : 'No outages reported';
+        overlayDiv.innerHTML = `<div class="bg--white title title--small p--5 clamp--none text--center" style="border-radius: 10px; border: solid 1px #000">${message}</div>`;
         overlayDiv.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000; pointer-events: none;';
         mapContainer.appendChild(overlayDiv);
       }
