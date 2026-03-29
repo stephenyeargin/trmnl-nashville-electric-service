@@ -1,12 +1,12 @@
 <div class="layout layout--column layout--top">
-  <div class="grid grid--cols-1 gap--large">
+  <div class="grid grid--cols-1 gap--large lg:gap--xlarge">
     <div>
-      <div class="grid grid--cols-1 gap--large">
+      <div class="grid grid--cols-1 gap--large lg:gap--xlarge">
         <div class="item">
           <div class="meta"></div>
           <div class="content">
             <div class="flex gap--small flex--center-y">
-              <img class="image image-stroke image-stroke--medium" src="data:image/svg+xml;base64,{{ outage_svg | base64_encode }}" style="height: 2rem; width: 2rem;" /> <span class="value value--medium value--tnums" data-value-format="true">{{ customer_count | number_with_delimiter | default: 0 }}</span>
+              <img class="image image-stroke image-stroke--medium" src="data:image/svg+xml;base64,{{ outage_svg | base64_encode }}" style="height: 2rem; width: 2rem;" /> <span class="value value--base lg:value--large value--tnums" data-value-format="true">{{ customer_count | number_with_delimiter | default: 0 }}</span>
             </div>
             <div><span class="label label--small">Customers Without Power</span></div>
           </div>
@@ -14,7 +14,7 @@
         <div class="item">
           <div class="meta"></div>
           <div class="content">
-            <div class="value value--small">{{ formatted_update_time }}</div>
+            <div class="value value--small lg:value--base">{{ formatted_update_time }}</div>
             <div><span class="label label--small">Last Updated</span></div>
           </div>
         </div>
@@ -22,10 +22,8 @@
     </div>
     <div class="col col--span-1">
       <div
-        id="wego-map"
-        class="wego-map"
         style="overflow: hidden;">
-        <div id="{{ mapCanvasId }}" style="width:100%; height:250px;">Loading ...</div>
+        <div id="{{ mapCanvasId }}" class="w--full h--[250px] lg:h--[500px]">Loading ...</div>
       </div>
     </div>
   </div>
