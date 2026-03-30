@@ -65,42 +65,43 @@
 </style>
 
 <script>
-  const MAP_LIST = {{ MapList | json }};
-  const COLLAPSED = {{ Collapsed | json }};
-  const TOTAL_INCIDENTS = {{ TotalIncidents | json }};
-  const TOTAL_AFFECTED = {{ TotalAffected | json }};
-  const THUNDERFOREST_API_KEY = {{ trmnl.plugin_settings.custom_fields_values.thunderforest_api_key | json }};
-</script>
-
-<script>
   /**
    * Main Loop
    */
-  document.addEventListener('DOMContentLoaded', async function () {
+  async function initializeMap() {
+    const MAP_LIST = {{ MapList | json }};
+    const COLLAPSED = {{ Collapsed | json }};
+    const TOTAL_INCIDENTS = {{ TotalIncidents | json }};
+    const TOTAL_AFFECTED = {{ TotalAffected | json }};
+    const THUNDERFOREST_API_KEY = {{ trmnl.plugin_settings.custom_fields_values.thunderforest_api_key | json }};
     const mapContainer = document.getElementById('{{ mapCanvasId }}');
     if (mapContainer) {
-      // Remove any previous map instance
-      if (window.nesMap && window.nesMap.remove) {
-        window.nesMap.remove();
+      // Track map instances by container ID so multiple screens can coexist.
+      if (!window.nesMaps) {
+        window.nesMaps = {};
+      }
+      if (window.nesMaps['{{ mapCanvasId }}'] && window.nesMaps['{{ mapCanvasId }}'].remove) {
+        window.nesMaps['{{ mapCanvasId }}'].remove();
       }
       mapContainer.innerHTML = '';
-      window.nesMap = L.map('{{ mapCanvasId }}', {
+      const map = L.map('{{ mapCanvasId }}', {
         center: [36.1627, -86.7816], // Nashville
         zoom: 1,
         zoomControl: false,
         attributionControl: false
       });
+      window.nesMaps['{{ mapCanvasId }}'] = map;
       // Nicer map if API key provided
       if (THUNDERFOREST_API_KEY && !THUNDERFOREST_API_KEY?.includes('THUNDERFOREST_API_KEY')) {
         L.tileLayer('https://{s}.tile.thunderforest.com/mobile-atlas/{z}/{x}/{y}{r}.png?apikey={apikey}', {
             attribution: '&copy; <a href="http://www.thunderforest.com/">Thunderforest</a>, &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
             apikey: THUNDERFOREST_API_KEY,
-          }).addTo(window.nesMap);
+          }).addTo(map);
       } else {
         L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
 	          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
             ext: 'png',
-          }).addTo(window.nesMap);
+          }).addTo(map);
       }
 
       // Create a layer group for markers
@@ -142,7 +143,7 @@
                 offset: [0, -10]
               });
 
-              marker.addTo(window.nesMap);
+              marker.addTo(map);
             } else {
               console.warn(`Marker ${index} has out-of-range coordinates:`, latitude, longitude);
             }
@@ -154,10 +155,10 @@
 
       // Set map bounds to include all markers or center on Nashville if collapsed/no outages
       if (bounds.length > 0) {
-        window.nesMap.fitBounds(bounds);
+        map.fitBounds(bounds);
       } else {
         // Center on Nashville with city-level zoom
-        window.nesMap.setView([36.1627, -86.7816], 10);
+        map.setView([36.1627, -86.7816], 10);
 
         // Add overlay message
         const overlayDiv = document.createElement('div');
@@ -169,5 +170,11 @@
         mapContainer.appendChild(overlayDiv);
       }
     }
-  });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeMap, { once: true });
+  } else {
+    initializeMap();
+  }
 </script>
