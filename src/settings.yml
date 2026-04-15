@@ -12,6 +12,7 @@ custom_fields:
 - keyname: author_bio
   name: About This Plugin
   field_type: author_bio
+  category: life
   description: Show the number of customers without power in Nashville, Tennessee
   github_url: https://github.com/stephenyeargin/trmnl-nashville-electric-service
   learn_more_url: https://www.nespower.com
