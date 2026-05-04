@@ -8,6 +8,7 @@ polling_url: https://www.nespower.com/outagemap/getall
 polling_headers: accept=application/json
 polling_body: ''
 id: 112378
+framework_version: latest
 custom_fields:
 - keyname: author_bio
   name: About This Plugin
