@@ -1,6 +1,6 @@
 # Nashville Electric Service (NES) for TRMNL
 
-[![Build and Deploy](https://github.com/stephenyeargin/trmnl-nashville-electric-service/actions/workflows/build.yml/badge.svg)](https://github.com/stephenyeargin/trmnl-nashville-electric-service/actions/workflows/build.yml)
+[![Build and Deploy](https://github.com/stephenyeargin/trmnl-nashville-electric-service/actions/workflows/build.yml/badge.svg)](https://github.com/stephenyeargin/trmnl-nashville-electric-service/actions/workflows/build.yml) [![TRMNL Recipe Connections](https://trmnl-badges.gohk.xyz/badge/connections?recipe=112378)](https://trmnl.com/recipes/112378)
 
 ![promo](assets/promo.png)
 
