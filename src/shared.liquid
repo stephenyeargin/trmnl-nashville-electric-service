@@ -1,11 +1,6 @@
+{% assign trmnl.user.locale = trmnl.user.locale | default: "en-US" %}
 {% assign mapCanvasId = "nes-map-canvas-" | append_random %}
-{% if UpdateDateTime contains "/Date(" %}
-  {% assign timestamp_str = UpdateDateTime | remove: "/Date(" | remove: ")/" %}
-  {% assign timestamp_seconds = timestamp_str | divided_by: 1000 | plus: trmnl.user.utc_offset %}
-  {% assign formatted_update_time = timestamp_seconds | date: "%-m/%-d/%Y %-I:%M %p" %}
-{% else %}
-  {% assign formatted_update_time = UpdateDateTimeFormatted %}
-{% endif %}
+{% assign formatted_update_time = UpdateDateTimeFormatted %}
 {% assign customer_count = TotalAffected %}
 {% if customer_count == nil or customer_count == '' %}
   {% assign customer_count = MapList | map: 'CustAffected' | sum %}
@@ -73,6 +68,7 @@
     const COLLAPSED = {{ Collapsed | json }};
     const TOTAL_INCIDENTS = {{ TotalIncidents | json }};
     const TOTAL_AFFECTED = {{ TotalAffected | json }};
+    const NES_LOCALE = {{ trmnl.user.locale | json }} || 'en-US';
     const THUNDERFOREST_API_KEY = {{ trmnl.plugin_settings.custom_fields_values.thunderforest_api_key | json }};
     const mapContainer = document.getElementById('{{ mapCanvasId }}');
     if (mapContainer) {
@@ -137,7 +133,7 @@
               const marker = L.marker([latitude, longitude], { icon: svgIcon });
 
               // Add tooltip showing number of customers affected
-              marker.bindTooltip(`${affected.toLocaleString()} customer${affected === 1 ? '' : 's'} affected`, {
+              marker.bindTooltip(`${affected.toLocaleString(NES_LOCALE)} customer${affected === 1 ? '' : 's'} affected`, {
                 permanent: false,
                 direction: 'top',
                 offset: [0, -10]
@@ -163,7 +159,7 @@
         // Add overlay message
         const overlayDiv = document.createElement('div');
         const message = COLLAPSED
-          ? `${TOTAL_INCIDENTS.toLocaleString()} outages affecting ${TOTAL_AFFECTED.toLocaleString()} customers`
+          ? `${TOTAL_INCIDENTS.toLocaleString(NES_LOCALE)} outages affecting ${TOTAL_AFFECTED.toLocaleString(NES_LOCALE)} customers`
           : 'No outages reported';
         overlayDiv.innerHTML = `<div class="bg--white title title--small p--5 clamp--none text--center" style="border-radius: 10px; border: solid 1px #000">${message}</div>`;
         overlayDiv.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000; pointer-events: none;';

@@ -6,7 +6,7 @@
           <div class="meta"></div>
           <div class="content">
             <div class="flex gap--small lg:gap--base flex--center-y">
-              <img class="image image-stroke image-stroke--medium" src="data:image/svg+xml;base64,{{ outage_svg | base64_encode }}" style="height: 2rem; width: 2rem;" /> <span class="value value--base lg:value--large value--tnums" data-value-format="true">{{ customer_count | number_with_delimiter | default: 0 }}</span>
+              <img class="image image-stroke image-stroke--medium" src="data:image/svg+xml;base64,{{ outage_svg | base64_encode }}" style="height: 2rem; width: 2rem;" /> <span class="value value--base lg:value--large value--tnums" data-value-format="true" data-value-locale="{{ trmnl.user.locale }}">{{ customer_count | default: 0 }}</span>
             </div>
             <div><span class="label label--small">Customers Without Power</span></div>
           </div>

@@ -21,6 +21,7 @@ variables:
     user: {
       time_zone: Central Time (US & Canada),
       time_zone_iana: America/Chicago,
-      utc_offset: -18000
+      utc_offset: -18000,
+      locale: 'en-US'
     }
   }

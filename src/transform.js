@@ -1,22 +1,8 @@
-/**
- * TRMNL Sandbox Transform
- * Reduces NES outage payload to stay under 100KB.
- * - Keeps only fields used by templates: X1 (lon), Y1 (lat), CustAffected
- * - Adds totals: TotalIncidents, TotalAffected
- * - If incidents > 10,000, collapses markers (MapList = []) to avoid huge payload
- *
- * Docs: https://help.usetrmnl.com/en/articles/12996946-parsing-plugins-with-the-sandbox-runtime
- */
-
-/**
- * TRMNL calls a global `transform(input)` in the sandbox.
- * Use conservative syntax for maximal compatibility.
- * @param {string|Object} input - Raw response body string or already-parsed JSON
- * @returns {Object} JSON object to feed templates
- */
 function transform(input) {
-  // Parse input safely
-  var raw;
+  const NES_LOCALE = input?.trmnl?.user?.locale || 'en-US';
+
+  let raw;
+
   try {
     raw = typeof input === 'string' ? JSON.parse(input) : input;
   } catch (err) {
@@ -31,54 +17,79 @@ function transform(input) {
     };
   }
 
-  var updateDateTime = raw && raw.UpdateDateTime ? raw.UpdateDateTime : null;
-  var updateDateTimeFormatted = raw && raw.UpdateDateTimeFormatted ? raw.UpdateDateTimeFormatted : null;
+  const dateOptions = {
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    timeZone: input?.trmnl?.user?.time_zone_iana
+  };
 
-  var originalList = raw && Array.isArray(raw.MapList) ? raw.MapList : [];
+  const updateDateTime = raw?.UpdateDateTime ?? null;
 
-  // Keep only needed fields and drop invalid coordinates
-  var minimalList = [];
-  var totalAffected = 0;
+  let updateDateTimeFormatted = null;
 
-  for (var i = 0; i < originalList.length; i++) {
-    var item = originalList[i];
-    var x = Number(item && item.X1);
-    var y = Number(item && item.Y1);
-    var affected = Number(item && item.CustAffected);
+  if (updateDateTime) {
+    const match = /Date\((\d+)\)/.exec(updateDateTime);
 
-    if (
-      isFinite(x) && isFinite(y) &&
-      y >= -90 && y <= 90 && x >= -180 && x <= 180
-    ) {
-      minimalList.push({ X1: x, Y1: y, CustAffected: affected });
-      if (isFinite(affected)) totalAffected += affected;
+    if (match) {
+      const timestamp = Number(match[1]);
+
+      if (!Number.isNaN(timestamp)) {
+        updateDateTimeFormatted = new Date(timestamp).toLocaleString(
+          NES_LOCALE,
+          dateOptions
+        );
+      }
     }
   }
 
-  var totalIncidents = minimalList.length;
+  const originalList = Array.isArray(raw?.MapList)
+    ? raw.MapList
+    : [];
 
-  // Collapse when too many points to plot
-  var COLLAPSE_THRESHOLD = 1000;
-  var collapsed = totalIncidents > COLLAPSE_THRESHOLD;
+  const minimalList = [];
+  let totalAffected = 0;
 
-  // Return collapsed structure (no markers) when threshold exceeded
-  if (collapsed) {
-    return {
-      Collapsed: true,
-      TotalIncidents: totalIncidents,
-      TotalAffected: totalAffected,
-      MapList: [],
-      UpdateDateTime: updateDateTime,
-      UpdateDateTimeFormatted: updateDateTimeFormatted
-    };
+  for (const item of originalList) {
+    const x = Number(item?.X1);
+    const y = Number(item?.Y1);
+    const affected = Number(item?.CustAffected);
+
+    const validCoordinates =
+      Number.isFinite(x) &&
+      Number.isFinite(y) &&
+      y >= -90 &&
+      y <= 90 &&
+      x >= -180 &&
+      x <= 180;
+
+    if (!validCoordinates) {
+      continue;
+    }
+
+    minimalList.push({
+      X1: x,
+      Y1: y,
+      CustAffected: affected
+    });
+
+    if (Number.isFinite(affected)) {
+      totalAffected += affected;
+    }
   }
 
-  // Otherwise return minimal list with totals
+  const totalIncidents = minimalList.length;
+
+  const COLLAPSE_THRESHOLD = 1000;
+  const collapsed = totalIncidents > COLLAPSE_THRESHOLD;
+
   return {
-    Collapsed: false,
+    Collapsed: collapsed,
     TotalIncidents: totalIncidents,
     TotalAffected: totalAffected,
-    MapList: minimalList,
+    MapList: collapsed ? [] : minimalList,
     UpdateDateTime: updateDateTime,
     UpdateDateTimeFormatted: updateDateTimeFormatted
   };
