@@ -25,5 +25,5 @@ custom_fields:
   placeholder: ABCDefg1234
   optional: true
 name: Nashville Electric Service (NES)
-description: Power outage map and status for NES customers
+description: Power outage map & status
 refresh_interval: 15
