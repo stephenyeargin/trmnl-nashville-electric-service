@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set up Ruby
         id: setup-ruby
@@ -79,7 +79,7 @@ jobs:
       should-release: ${{ steps.check.outputs.should-release }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Read VERSION file
         id: version
@@ -115,7 +115,7 @@ jobs:
     if: needs.check-version.outputs.should-release == 'true' && needs.check-secret.outputs.has-secret == 'true'
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0  # Fetch full history for changelog generation
 
@@ -167,7 +167,7 @@ jobs:
     if: success() && needs.check-secret.outputs.has-secret == 'true'
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set up Ruby
         id: setup-ruby
