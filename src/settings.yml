@@ -6,7 +6,9 @@ static_data: ''
 polling_verb: get
 framework_version: latest
 serverless_language: node
-polling_url: https://www.nespower.com/outagemap/getall
+polling_url: |-
+  https://utilisocial.io/datacapable/v2/p/NES/map/events
+  https://utilisocial.io/datacapable/v2/p/NES/map/stats
 polling_headers: accept=application/json
 polling_body: ''
 id: 112378

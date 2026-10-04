@@ -26,36 +26,22 @@ function transform(input) {
     timeZone: input?.trmnl?.user?.time_zone_iana
   };
 
-  const updateDateTime = raw?.UpdateDateTime ?? null;
+  const updateDateTime = Number(raw?.IDX_1?.lastUpdatedTime) || null;
+  const updateDateTimeFormatted = updateDateTime
+    ? new Date(updateDateTime).toLocaleString(NES_LOCALE, dateOptions)
+    : null;
 
-  let updateDateTimeFormatted = null;
-
-  if (updateDateTime) {
-    const match = /Date\((\d+)\)/.exec(updateDateTime);
-
-    if (match) {
-      const timestamp = Number(match[1]);
-
-      if (!Number.isNaN(timestamp)) {
-        updateDateTimeFormatted = new Date(timestamp).toLocaleString(
-          NES_LOCALE,
-          dateOptions
-        );
-      }
-    }
-  }
-
-  const originalList = Array.isArray(raw?.MapList)
-    ? raw.MapList
+  const originalList = Array.isArray(raw?.IDX_0?.data)
+    ? raw.IDX_0.data
     : [];
 
   const minimalList = [];
   let totalAffected = 0;
 
   for (const item of originalList) {
-    const x = Number(item?.X1);
-    const y = Number(item?.Y1);
-    const affected = Number(item?.CustAffected);
+    const x = Number(item?.longitude);
+    const y = Number(item?.latitude);
+    const affected = Number(item?.numPeople);
 
     const validCoordinates =
       Number.isFinite(x) &&
