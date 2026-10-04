@@ -43,134 +43,73 @@
 </svg>
 {%- endcapture %}
 
-<link
-  rel="stylesheet"
-  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-  crossorigin="" />
-<script
-  src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-  crossorigin=""></script>
+{%- capture map_overlay %}
+{%- if Collapsed or MapList.size == 0 %}
+<div class="absolute z--2 p--4 bg--white outline rounded--base title title--small clamp--none text--center" style="top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none;">
+  {%- if Collapsed -%}
+    {{ TotalIncidents | number_with_delimiter }} outages affecting {{ TotalAffected | number_with_delimiter }} customers
+  {%- else -%}
+    No outages reported
+  {%- endif -%}
+</div>
+{%- endif %}
+{%- endcapture %}
 
-<style>
-  #{{ mapCanvasId }} {
-    border-radius: 10px;
-  }
-</style>
+<script src="https://trmnl.com/js/maplibre-gl/5.24.0/maplibre-gl.js"></script>
+<link href="https://trmnl.com/js/maplibre-gl/5.24.0/maplibre-gl.css" rel="stylesheet">
 
 <script>
-  /**
-   * Main Loop
-   */
-  async function initializeMap() {
+  function initializeMap() {
     const MAP_LIST = {{ MapList | json }};
-    const COLLAPSED = {{ Collapsed | json }};
-    const TOTAL_INCIDENTS = {{ TotalIncidents | json }};
-    const TOTAL_AFFECTED = {{ TotalAffected | json }};
-    const NES_LOCALE = {{ trmnl.user.locale | json }} || 'en-US';
-    const THUNDERFOREST_API_KEY = {{ trmnl.plugin_settings.custom_fields_values.thunderforest_api_key | json }};
-    const mapContainer = document.getElementById('{{ mapCanvasId }}');
-    if (mapContainer) {
-      // Track map instances by container ID so multiple screens can coexist.
-      if (!window.nesMaps) {
-        window.nesMaps = {};
-      }
-      if (window.nesMaps['{{ mapCanvasId }}'] && window.nesMaps['{{ mapCanvasId }}'].remove) {
-        window.nesMaps['{{ mapCanvasId }}'].remove();
-      }
-      mapContainer.innerHTML = '';
-      const map = L.map('{{ mapCanvasId }}', {
-        center: [36.1627, -86.7816], // Nashville
-        zoom: 1,
-        zoomControl: false,
-        attributionControl: false
+    const el = '{{ mapCanvasId }}';
+    if (!document.getElementById(el)) return;
+
+    const coords = [];
+    const radii = [];
+    MAP_LIST.forEach((item) => {
+      const longitude = parseFloat(item.X1);
+      const latitude = parseFloat(item.Y1);
+      const affected = parseInt(item.CustAffected, 10);
+      if (isNaN(latitude) || isNaN(longitude)) return;
+      coords.push([longitude, latitude]);
+      radii.push(affected > 500 ? 16 : affected > 100 ? 13 : affected > 50 ? 10 : 8);
+    });
+
+    TRMNLMaps.watch(el, function () {
+      const style = TRMNLMaps.style('minimal', { el: el });
+      style.layers = style.layers.filter((layer) => !layer.id.startsWith('land-'));
+      const map = new maplibregl.Map(TRMNLMaps.options({
+        el: el,
+        style: style,
+        center: [-86.7816, 36.1627], // Nashville
+        zoom: 10
+      }));
+      coords.forEach((lngLat, index) => {
+        const icon = document.createElement('img');
+        icon.src = 'data:image/svg+xml;base64,{{ outage_svg | base64_encode }}';
+        icon.style.width = icon.style.height = (radii[index] * 2) + 'px';
+        icon.style.zIndex = 2; // above the framework's dither canvas and labels
+        new maplibregl.Marker({ element: icon }).setLngLat(lngLat).addTo(map);
       });
-      window.nesMaps['{{ mapCanvasId }}'] = map;
-      // Nicer map if API key provided
-      if (THUNDERFOREST_API_KEY && !THUNDERFOREST_API_KEY?.includes('THUNDERFOREST_API_KEY')) {
-        L.tileLayer('https://{s}.tile.thunderforest.com/mobile-atlas/{z}/{x}/{y}{r}.png?apikey={apikey}', {
-            attribution: '&copy; <a href="http://www.thunderforest.com/">Thunderforest</a>, &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-            apikey: THUNDERFOREST_API_KEY,
-          }).addTo(map);
-      } else {
-        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-	          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-            ext: 'png',
-          }).addTo(map);
+      if (coords.length > 0) {
+        TRMNLMaps.fit(map, coords, { padding: TRMNLPaint.px(24, { el: el }), maxZoom: 14 });
       }
+      return map;
+    });
+  }
 
-      // Create a layer group for markers
-      const markerLayer = L.layerGroup();
-      const bounds = [];
-
-      if (!COLLAPSED) {
-        MAP_LIST.map((item, index) => {
-          // X1 is longitude, Y1 is latitude in geographic data
-          let latitude = parseFloat(item.Y1);
-          let longitude = parseFloat(item.X1);
-          let affected = parseInt(item.CustAffected, 10);
-
-          // Validate and process latitude/longitude before using
-          if (!isNaN(latitude) && !isNaN(longitude)) {
-            if (latitude >= -90 && latitude <= 90 && longitude >= -180 && longitude <= 180) {
-              bounds.push([latitude, longitude]);
-
-              // Define severity levels based on the number of customers affected
-              const severity = affected > 500 ? 'critical' : affected > 100 ? 'high' : affected > 50 ? 'medium' : 'low';
-
-              // Scale marker size based on severity
-              const radius = severity === 'critical' ? 16 : severity === 'high' ? 13 : severity === 'medium' ? 10 : 8;
-
-              // Use data URL with base64-encoded SVG
-              const svgIcon = L.icon({
-                iconUrl: `data:image/svg+xml;base64,{{ outage_svg | base64_encode }}`,
-                iconSize: [radius * 2, radius * 2],
-                iconAnchor: [radius, radius],
-              });
-
-              // Create marker with tooltip
-              const marker = L.marker([latitude, longitude], { icon: svgIcon });
-
-              // Add tooltip showing number of customers affected
-              marker.bindTooltip(`${affected.toLocaleString(NES_LOCALE)} customer${affected === 1 ? '' : 's'} affected`, {
-                permanent: false,
-                direction: 'top',
-                offset: [0, -10]
-              });
-
-              marker.addTo(map);
-            } else {
-              console.warn(`Marker ${index} has out-of-range coordinates:`, latitude, longitude);
-            }
-          } else {
-            console.warn(`Marker ${index} has invalid coordinates:`, item.Y1, item.X1);
-          }
-        });
-      }
-
-      // Set map bounds to include all markers or center on Nashville if collapsed/no outages
-      if (bounds.length > 0) {
-        map.fitBounds(bounds);
-      } else {
-        // Center on Nashville with city-level zoom
-        map.setView([36.1627, -86.7816], 10);
-
-        // Add overlay message
-        const overlayDiv = document.createElement('div');
-        const message = COLLAPSED
-          ? `${TOTAL_INCIDENTS.toLocaleString(NES_LOCALE)} outages affecting ${TOTAL_AFFECTED.toLocaleString(NES_LOCALE)} customers`
-          : 'No outages reported';
-        overlayDiv.innerHTML = `<div class="bg--white title title--small p--5 clamp--none text--center" style="border-radius: 10px; border: solid 1px #000">${message}</div>`;
-        overlayDiv.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000; pointer-events: none;';
-        mapContainer.appendChild(overlayDiv);
-      }
-    }
+  function whenReady() {
+    let tries = 0;
+    (function attempt() {
+      if (window.TRMNLMaps && window.maplibregl) return initializeMap();
+      if (++tries > 200) return;
+      setTimeout(attempt, 50);
+    })();
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeMap, { once: true });
+    document.addEventListener('DOMContentLoaded', whenReady, { once: true });
   } else {
-    initializeMap();
+    whenReady();
   }
 </script>
